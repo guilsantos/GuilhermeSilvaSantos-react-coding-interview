@@ -11,6 +11,33 @@ import { usePersonInformation } from '../../components/hooks/usePersonInformatio
 import { Company } from '../../constants/types';
 import { ResponsiveListCard } from '../../constants';
 
+const DisplayInfos = ({ data }) => (
+  <Descriptions size="small" column={1}>
+    <Descriptions.Item label="Name">{data.name}</Descriptions.Item>
+    <Descriptions.Item label="Gender">{data.gender}</Descriptions.Item>
+    <Descriptions.Item label="Phone">{data.phone}</Descriptions.Item>
+
+    <Descriptions.Item label="Birthday">{data.birthday}</Descriptions.Item>
+  </Descriptions>
+);
+
+const EditInfos = ({ data, setValue }) => (
+  <div>
+    Name:
+    <Input
+      placeholder="Name"
+      onChange={(e) => setValue(e.target.value, 'name')}
+      value={data.name}
+    />
+    Phone:
+    <Input
+      placeholder="Phone"
+      onChange={(e) => setValue(e.target.value, 'phone')}
+      value={data.phone}
+    />
+  </div>
+);
+
 const PersonDetail = () => {
   const router = useRouter();
   const { load, loading, save, data } = usePersonInformation(
@@ -18,9 +45,27 @@ const PersonDetail = () => {
     true
   );
 
+  const [localData, setLocalData] = useState(data);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleEdit = () => setIsEditing(true);
+
+  const handleSave = () => {
+    save(localData);
+    setIsEditing(false);
+  };
+
+  const handleSetValue = (value, prop) => {
+    setLocalData({ ...localData, [prop]: value });
+  };
+
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    setLocalData({ ...data });
+  }, [data]);
 
   if (loading) {
     return <OverlaySpinner title={`Loading ${router.query?.email} information`} />;
@@ -49,24 +94,20 @@ const PersonDetail = () => {
           >
             Visit website
           </Button>,
-          <Button type="default" onClick={() => {}}>
-            Edit
+          <Button type="default" onClick={isEditing ? handleSave : handleEdit}>
+            {isEditing ? 'Save' : 'Edit'}
           </Button>,
         ]}
       >
-        {data && (
-          <Descriptions size="small" column={1}>
-            <Descriptions.Item label="Name">{data.name}</Descriptions.Item>
-            <Descriptions.Item label="Gender">{data.gender}</Descriptions.Item>
-            <Descriptions.Item label="Phone">{data.phone}</Descriptions.Item>
-
-            <Descriptions.Item label="Birthday">{data.birthday}</Descriptions.Item>
-          </Descriptions>
+        {localData && isEditing ? (
+          <EditInfos data={localData} setValue={handleSetValue} />
+        ) : (
+          <DisplayInfos data={localData} />
         )}
         <GenericList<Company>
           loading={loading}
           extra={ResponsiveListCard}
-          data={data && data.companyHistory}
+          data={localData && localData.companyHistory}
           ItemRenderer={({ item }: any) => <CompanyCard item={item} />}
           handleLoadMore={() => {}}
           hasMore={false}
